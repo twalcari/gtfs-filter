@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.onebusaway.gtfs.impl.GtfsRelationalDaoImpl;
+import org.onebusaway.gtfs.model.calendar.ServiceDate;
 import org.onebusaway.gtfs.serialization.GtfsReader;
 import org.onebusaway.gtfs.serialization.GtfsWriter;
 import org.onebusaway.gtfs.services.GtfsDao;
@@ -41,7 +42,11 @@ public class Main implements Runnable {
 		}
 
 		// filter the content of the dao
-		GtfsDao filteredDao = new TramDaoFilter(dao);
+		GtfsDao filteredDao = dao;
+		filteredDao = new TransportTypeDaoFilter(filteredDao, TransportTypeDaoFilter.TRAM_TYPE);
+		filteredDao = new LocationDaoFilter(filteredDao, 51.0, 3.65, 51.125, 3.825);
+		filteredDao = new TimespanDAOFilter(filteredDao, new ServiceDate(2011,11,11));
+		
 		// write the filtered data
 
 		GtfsWriter writer = new GtfsWriter();
