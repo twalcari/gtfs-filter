@@ -3,8 +3,8 @@ package be.ugent.intec.gtfsfilter;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -26,19 +26,26 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.ImmutableMap;
 
 public class Main {
-	private static final String DEFAULT_OUTPUT_LOCATION = "output/";
 
-	private final Logger LOG = LoggerFactory.getLogger(Main.class);
+	private final static Logger LOG = LoggerFactory.getLogger(Main.class);
+
+	// CLI constants
+	private static final String DESCRIPTION_OPT_OUTPUT = "Output location for the filtered gtfs-files (defaults to \"output/\"";
+	private static final String DESCRIPTION_OPT_TRANSPORTTYPE = "only keep trips with the given transport types. Possible values are: tram, subway, rail, bus, ferry, cablecar, gondola, funicular";
+	private static final String DESCRIPTION_OPT_TIME = "filter trips outside the given timespan (format: yyyy-mm-dd)";
+	private static final String DESCRIPTION_OPT_LOCATION = "filter locations outside given latlon-box";
+
+	private static final char LOCATION_OPTION = 'l';
+	private static final char TIME_OPTION = 'd';
+	private static final char TYPE_OPTION = 't';
+	private static final char OUTPUT_OPTION = 'o';
 
 	private static final String USAGE = "[-o <folder>] [-l <lat:lon:lat:lon>] [-d <date>|<start:end>] [-t <types>] INPUT";
 	private static final String HEADER = "gtfs-filter - This application can filter GTFS-feed on three different ways: by location, by traveldate and by transporttype";
 	private static final String FOOTER = "For more information, see https://github.com/twalcari/gtfs-filter";
 
-	private static final char LOCATION_OPTION = 'l';
-	private static final char TIME_OPTION = 'd';
-	private static final char TYPE_OPTION = 't';
-
-	private static final char OUTPUT_OPTION = 'o';
+	// other constants
+	private static final String DEFAULT_OUTPUT_LOCATION = "output/";
 
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(
 			"yyyy-MM-dd");
@@ -48,8 +55,7 @@ public class Main {
 		TRANSPORT_TYPES = new ImmutableMap.Builder<String, Integer>()
 				.put("tram", 0).put("subway", 1).put("rail", 2).put("bus", 3)
 				.put("ferry", 4).put("cablecar", 5).put("gondola", 6)
-				.put("funicular", 7)
-				.build();
+				.put("funicular", 7).build();
 	}
 
 	private final File input, output;
@@ -87,11 +93,11 @@ public class Main {
 	}
 
 	public void applyTimespanFilter(ServiceDate start, ServiceDate end) {
-		filteredDao = new TimespanDAOFilter(filteredDao, start, end);
+		filteredDao = new TimespanDaoFilter(filteredDao, start, end);
 	}
 
 	public void applyTimespanFilter(ServiceDate oneday) {
-		filteredDao = new TimespanDAOFilter(filteredDao, oneday);
+		filteredDao = new TimespanDaoFilter(filteredDao, oneday);
 	}
 
 	public void applyTransportTypeFilter(int... transportTypes) {
@@ -141,9 +147,15 @@ public class Main {
 				main.read();
 
 				if (result.hasOption(LOCATION_OPTION)) {
-					System.out.println("Applying location filter");
+
 					String[] boundaries = result
 							.getOptionValues(LOCATION_OPTION);
+
+					System.out.println("Applying location filter");
+
+					LOG.info(
+							"Applying location filter with restrictions: {},{} --> {}, {}",
+							boundaries);
 
 					main.applyLocationFilter(Double.parseDouble(boundaries[0]),
 							Double.parseDouble(boundaries[1]),
@@ -152,32 +164,39 @@ public class Main {
 				}
 
 				if (result.hasOption(TIME_OPTION)) {
-					System.out.println("Applying time filter");
 					String[] times = result.getOptionValues(TIME_OPTION);
 
 					Date start = DATE_FORMAT.parse(times[0]);
 
 					if (times.length == 1) {
+						LOG.info("Applying time filter for one day: {}",
+								new ServiceDate(start));
 						main.applyTimespanFilter(new ServiceDate(start));
 					} else {
 						Date end = DATE_FORMAT.parse(times[1]);
+
+						LOG.info(
+								"Applying time filter for timespan: {} --> {}",
+								new ServiceDate(start), new ServiceDate(end));
+
 						main.applyTimespanFilter(new ServiceDate(start),
 								new ServiceDate(end));
 					}
 				}
 
-				if(result.hasOption(TYPE_OPTION)){
-					System.out.println("Applying transport type filter");
+				if (result.hasOption(TYPE_OPTION)) {
 					String[] types = result.getOptionValues(TYPE_OPTION);
-					
+
 					int[] typeInts = new int[types.length];
-					for(int i = 0 ; i <  types.length; i++)
-						typeInts[i] = TRANSPORT_TYPES.get(types[i].toLowerCase());
-					
+					for (int i = 0; i < types.length; i++)
+						typeInts[i] = TRANSPORT_TYPES.get(types[i]
+								.toLowerCase());
+
+					LOG.info("Applying transport type filters: {}", Arrays.toString(typeInts));
 					
 					main.applyTransportTypeFilter(typeInts);
 				}
-				
+
 				main.write();
 			} catch (NumberFormatException | ParseException
 					| java.text.ParseException e) {
@@ -200,8 +219,7 @@ public class Main {
 		// filters
 		OptionBuilder.withArgName("lat:lon:lat:lon");
 		OptionBuilder.withLongOpt("location");
-		OptionBuilder
-				.withDescription("filter locations outside given latlon-box");
+		OptionBuilder.withDescription(DESCRIPTION_OPT_LOCATION);
 		OptionBuilder.hasArgs(4);
 		OptionBuilder.withValueSeparator(':');
 
@@ -209,24 +227,22 @@ public class Main {
 
 		OptionBuilder.withArgName("start:end");
 		OptionBuilder.withLongOpt("timespan");
-		OptionBuilder
-				.withDescription("filter trips outside the given timespan (format: yyyy-mm-dd)");
-		OptionBuilder.hasArgs(2);
+		OptionBuilder.withDescription(DESCRIPTION_OPT_TIME);
+		OptionBuilder.hasArgs(1);
+		OptionBuilder.hasOptionalArgs(1);
 		OptionBuilder.withValueSeparator(':');
 		Option timespanOption = OptionBuilder.create(TIME_OPTION);
 
 		OptionBuilder.withArgName("types");
 		OptionBuilder.withLongOpt("type");
-		OptionBuilder
-				.withDescription("only keep trips with the given transport types. Possible values are: tram, subway, rail, bus, ferry, cablecar, gondola, funicular");
+		OptionBuilder.withDescription(DESCRIPTION_OPT_TRANSPORTTYPE);
 		OptionBuilder.hasArgs();
 		OptionBuilder.withValueSeparator(',');
 		Option typeOption = OptionBuilder.create(TYPE_OPTION);
 
 		// output folder
 		OptionBuilder.withLongOpt("output");
-		OptionBuilder
-				.withDescription("Output location for the filtered gtfs-files (defaults to \"output/\"");
+		OptionBuilder.withDescription(DESCRIPTION_OPT_OUTPUT);
 		OptionBuilder.withArgName("location");
 		OptionBuilder.hasArg();
 		Option outputOption = OptionBuilder.create(OUTPUT_OPTION);

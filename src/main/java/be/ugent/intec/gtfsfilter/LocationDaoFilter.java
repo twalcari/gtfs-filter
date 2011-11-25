@@ -17,11 +17,11 @@ import org.onebusaway.gtfs.services.GtfsDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import be.ugent.intec.gtfsfilter.predicates.FrequencyByTripPredicate;
-import be.ugent.intec.gtfsfilter.predicates.ServiceCalendarByServiceIdPredicate;
-import be.ugent.intec.gtfsfilter.predicates.ServiceCalendarDateByServiceIdPredicate;
-import be.ugent.intec.gtfsfilter.predicates.ShapePointsByShapeIdPredicate;
-import be.ugent.intec.gtfsfilter.predicates.StopTimesByStopPredicate;
+import be.ugent.intec.gtfsfilter.predicates.FrequencyByTripsPredicate;
+import be.ugent.intec.gtfsfilter.predicates.ServiceCalendarByServiceIdsPredicate;
+import be.ugent.intec.gtfsfilter.predicates.ServiceCalendarDateByServiceIdsPredicate;
+import be.ugent.intec.gtfsfilter.predicates.ShapePointsByShapeIdsPredicate;
+import be.ugent.intec.gtfsfilter.predicates.StopTimesByStopsPredicate;
 import be.ugent.intec.gtfsfilter.transformers.StopTimeToTripFunction;
 import be.ugent.intec.gtfsfilter.transformers.TripToRouteFunction;
 import be.ugent.intec.gtfsfilter.transformers.TripToServiceIdFunction;
@@ -68,7 +68,7 @@ public class LocationDaoFilter extends GtfsDaoFilter {
 				.size(), stops.size());
 
 		this.stoptimes = (Collections2.filter(input.getAllStopTimes(),
-				new StopTimesByStopPredicate(stops)));
+				new StopTimesByStopsPredicate(stops)));
 
 		LOG.info("Filtered down from {} to {} stoptimes", input
 				.getAllStopTimes().size(), stoptimes.size());
@@ -126,7 +126,7 @@ public class LocationDaoFilter extends GtfsDaoFilter {
 	@Override
 	public Collection<ServiceCalendar> getAllCalendars() {
 		return Collections2.filter(super.getAllCalendars(),
-				new ServiceCalendarByServiceIdPredicate(serviceIds));
+				new ServiceCalendarByServiceIdsPredicate(serviceIds));
 	}
 
 	/*
@@ -137,7 +137,7 @@ public class LocationDaoFilter extends GtfsDaoFilter {
 	@Override
 	public Collection<ServiceCalendarDate> getAllCalendarDates() {
 		return Collections2.filter(super.getAllCalendarDates(),
-				new ServiceCalendarDateByServiceIdPredicate(serviceIds));
+				new ServiceCalendarDateByServiceIdsPredicate(serviceIds));
 	}
 
 	/*
@@ -148,7 +148,7 @@ public class LocationDaoFilter extends GtfsDaoFilter {
 	@Override
 	public Collection<Frequency> getAllFrequencies() {
 		return Collections2.filter(super.getAllFrequencies(),
-				new FrequencyByTripPredicate(trips));
+				new FrequencyByTripsPredicate(trips));
 	}
 
 	/*
@@ -169,7 +169,7 @@ public class LocationDaoFilter extends GtfsDaoFilter {
 	@Override
 	public Collection<ShapePoint> getAllShapePoints() {
 		return Collections2.filter(super.getAllShapePoints(),
-				new ShapePointsByShapeIdPredicate(shapeIds));
+				new ShapePointsByShapeIdsPredicate(shapeIds));
 	}
 
 	/*
