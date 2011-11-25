@@ -5,6 +5,7 @@ Compiling
 ---------
 This project uses Maven for its dependency management. 
 To get an executable jar use:
+
 	mvn package
 
 
@@ -31,3 +32,4 @@ License
 -------
 gtfs-filter is distributed under the GNU General Public License. 
 Please refer to license.txt for more information.
+
