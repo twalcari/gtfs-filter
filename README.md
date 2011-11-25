@@ -26,3 +26,8 @@ Usage
 	                                   tram, subway, rail, bus, ferry,
 	                                   cablecar, gondola, funicular
 	For more information, see https://github.com/twalcari/gtfs-filter
+	
+License
+-------
+gtfs-filter is distributed under the GNU General Public License. 
+Please refer to license.txt for more information.
