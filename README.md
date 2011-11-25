@@ -1,6 +1,16 @@
 gtfs-filter
 ===========
 
+Compiling
+---------
+This project uses Maven for its dependency management. 
+To get an executable jar use:
+	mvn package
+
+
+Usage
+-----
+
 usage: [-o <folder>] [-l <lat:lon:lat:lon>] [-d <date>|<start:end>] [-t
            <types>] INPUT
 gtfs-filter - This application can filter GTFS-feed on three different
