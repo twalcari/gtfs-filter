@@ -58,7 +58,7 @@ public class TransportTypeDaoFilter extends GtfsDaoFilter {
 
 					@Override
 					public boolean apply(Route input) {
-						return input.getType() == TRAM_TYPE;
+						return list.contains(input.getType());
 					}
 				}));
 
