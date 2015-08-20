@@ -228,8 +228,7 @@ public class Main {
 		OptionBuilder.withArgName("start:end");
 		OptionBuilder.withLongOpt("timespan");
 		OptionBuilder.withDescription(DESCRIPTION_OPT_TIME);
-		OptionBuilder.hasArgs(1);
-		OptionBuilder.hasOptionalArgs(1);
+		OptionBuilder.hasArgs(2);
 		OptionBuilder.withValueSeparator(':');
 		Option timespanOption = OptionBuilder.create(TIME_OPTION);
 
