@@ -12,6 +12,7 @@ import org.onebusaway.gtfs.model.ServiceCalendarDate;
 import org.onebusaway.gtfs.model.ShapePoint;
 import org.onebusaway.gtfs.model.Stop;
 import org.onebusaway.gtfs.model.StopTime;
+import org.onebusaway.gtfs.model.Transfer;
 import org.onebusaway.gtfs.model.Trip;
 import org.onebusaway.gtfs.services.GtfsDao;
 import org.slf4j.Logger;
@@ -22,6 +23,7 @@ import be.ugent.intec.gtfsfilter.predicates.ServiceCalendarByServiceIdsPredicate
 import be.ugent.intec.gtfsfilter.predicates.ServiceCalendarDateByServiceIdsPredicate;
 import be.ugent.intec.gtfsfilter.predicates.ShapePointsByShapeIdsPredicate;
 import be.ugent.intec.gtfsfilter.predicates.StopTimesByStopsPredicate;
+import be.ugent.intec.gtfsfilter.predicates.TransfersByStopsPredicate;
 import be.ugent.intec.gtfsfilter.transformers.StopTimeToTripFunction;
 import be.ugent.intec.gtfsfilter.transformers.TripToRouteFunction;
 import be.ugent.intec.gtfsfilter.transformers.TripToServiceIdFunction;
@@ -40,6 +42,7 @@ public class LocationDaoFilter extends GtfsDaoFilter {
 	private final Collection<StopTime> stoptimes;
 	private final Set<Trip> trips;
 	private final Set<Route> routes;
+	private final Collection<Transfer> transfers;
 
 	private final Set<AgencyAndId> serviceIds;
 	private final Set<AgencyAndId> shapeIds;
@@ -96,6 +99,12 @@ public class LocationDaoFilter extends GtfsDaoFilter {
 				new TripToShapeIdFunction()));
 
 		LOG.info("Filtered down to {} shapeIds", shapeIds.size());
+
+		this.transfers = (Collections2.filter(input.getAllTransfers(),
+				new TransfersByStopsPredicate(stops)));
+
+		LOG.info("Filtered down from {} to {} transfers", input
+				.getAllTransfers().size(), transfers.size());
 	}
 
 	/*
@@ -182,4 +191,13 @@ public class LocationDaoFilter extends GtfsDaoFilter {
 		return stoptimes;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see be.ugent.intec.gtfsfilter.GtfsDaoFilter#getAllTransfers()
+	 */
+	@Override
+	public Collection<Transfer> getAllTransfers() {
+		return transfers;
+	}
 }
