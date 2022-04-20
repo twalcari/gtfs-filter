@@ -20,6 +20,8 @@ Usage
 	                                   (format: yyyy-mm-dd)
 	 -l,--location <lat:lon:lat:lon>   filter locations outside given
 	                                   latlon-box
+	 -p,--polygon <pathGeojson>        filter locations outside given
+	                                   geojson polygon boundary
 	 -o,--output <location>            Output location for the filtered
 	                                   gtfs-files (defaults to "output/"
 	 -t,--type <types>                 only keep trips with the given
