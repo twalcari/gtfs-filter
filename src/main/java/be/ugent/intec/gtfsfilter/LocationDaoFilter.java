@@ -4,6 +4,10 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Polygon;
 import org.onebusaway.gtfs.model.AgencyAndId;
 import org.onebusaway.gtfs.model.Frequency;
 import org.onebusaway.gtfs.model.Route;
@@ -61,6 +65,59 @@ public class LocationDaoFilter extends GtfsDaoFilter {
 								&& input.getLon() > minlon
 								&& input.getLat() < maxlat
 								&& input.getLon() < maxlon;
+					}
+				}));
+
+		LOG.info("Filtered down from {} to {} stops", input.getAllStops()
+				.size(), stops.size());
+
+		this.stoptimes = (Collections2.filter(input.getAllStopTimes(),
+				new StopTimesByStopsPredicate(stops)));
+
+		LOG.info("Filtered down from {} to {} stoptimes", input
+				.getAllStopTimes().size(), stoptimes.size());
+
+		this.trips = new HashSet<>();
+		trips.addAll(Collections2.transform(stoptimes,
+				new StopTimeToTripFunction()));
+
+		LOG.info("Filtered down from {} to {} trips", input.getAllTrips()
+				.size(), trips.size());
+
+		this.routes = new HashSet<>();
+		routes.addAll(Collections2.transform(trips, new TripToRouteFunction()));
+		LOG.info("Filtered down from {} to {} routes", input.getAllRoutes()
+				.size(), routes.size());
+
+		serviceIds = new HashSet<>();
+		serviceIds.addAll(Collections2.transform(trips,
+				new TripToServiceIdFunction()));
+
+		LOG.info("Filtered down to {} serviceIds", serviceIds.size());
+
+		shapeIds = new HashSet<>();
+		shapeIds.addAll(Collections2.transform(trips,
+				new TripToShapeIdFunction()));
+
+		LOG.info("Filtered down to {} shapeIds", shapeIds.size());
+	}
+
+	public LocationDaoFilter(GtfsDao input, final Polygon p) {
+		super(input);
+		this.minlat = 0.0;
+		this.minlon = 0.0;
+		this.maxlat = 0.0;
+		this.maxlon = 0.0;
+
+		this.stops = new HashSet<>();
+		stops.addAll(Collections2.filter(input.getAllStops(),
+				new Predicate<Stop>() {
+					@Override
+					public boolean apply(Stop input) {
+						GeometryFactory gf = new GeometryFactory();
+						Coordinate coord = new Coordinate(input.getLon(), input.getLat());
+						Point pt = gf.createPoint(coord);
+						return p.contains(pt);
 					}
 				}));
 

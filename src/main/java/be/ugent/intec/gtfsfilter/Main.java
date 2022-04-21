@@ -1,7 +1,10 @@
 package be.ugent.intec.gtfsfilter;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -14,6 +17,8 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
+import org.geotools.geojson.geom.GeometryJSON;
+import org.locationtech.jts.geom.Polygon;
 import org.onebusaway.gtfs.impl.GtfsRelationalDaoImpl;
 import org.onebusaway.gtfs.model.calendar.ServiceDate;
 import org.onebusaway.gtfs.serialization.GtfsReader;
@@ -34,13 +39,15 @@ public class Main {
 	private static final String DESCRIPTION_OPT_TRANSPORTTYPE = "only keep trips with the given transport types. Possible values are: tram, subway, rail, bus, ferry, cablecar, gondola, funicular";
 	private static final String DESCRIPTION_OPT_TIME = "filter trips outside the given timespan (format: yyyy-mm-dd)";
 	private static final String DESCRIPTION_OPT_LOCATION = "filter locations outside given latlon-box";
+	private static final String DESCRIPTION_OPT_POLYGON = "filter locations outside given geojson polygon";
 
 	private static final char LOCATION_OPTION = 'l';
+	private static final char POLYGON_OPTION = 'p';
 	private static final char TIME_OPTION = 'd';
 	private static final char TYPE_OPTION = 't';
 	private static final char OUTPUT_OPTION = 'o';
 
-	private static final String USAGE = "[-o <folder>] [-l <lat:lon:lat:lon>] [-d <date>|<start:end>] [-t <types>] INPUT";
+	private static final String USAGE = "[-o <folder>] [-l <lat:lon:lat:lon>] [-p <pathGeojson>] [-d <date>|<start:end>] [-t <types>] INPUT";
 	private static final String HEADER = "gtfs-filter - This application can filter GTFS-feed on three different ways: by location, by traveldate and by transporttype";
 	private static final String FOOTER = "For more information, see https://github.com/twalcari/gtfs-filter";
 
@@ -90,6 +97,10 @@ public class Main {
 			double maxlat, double maxlon) {
 		filteredDao = new LocationDaoFilter(filteredDao, minlat, minlon,
 				maxlat, maxlon);
+	}
+
+	public void applyPolygonFilter(Polygon p) {
+		filteredDao = new LocationDaoFilter(filteredDao, p);
 	}
 
 	public void applyTimespanFilter(ServiceDate start, ServiceDate end) {
@@ -162,6 +173,26 @@ public class Main {
 							Double.parseDouble(boundaries[2]),
 							Double.parseDouble(boundaries[3]));
 				}
+				if (result.hasOption(POLYGON_OPTION)) {
+
+					String[] boundaries = result.getOptionValues(POLYGON_OPTION);
+
+					System.out.println("Applying polygon filter");
+					GeometryJSON gjson = new GeometryJSON();
+					Reader reader;
+					try {
+						reader = new FileReader(boundaries[0]);
+						Polygon p = gjson.readPolygon(reader);
+						LOG.info("Applying polygon filter "+ p);
+						main.applyPolygonFilter(p);
+					} catch (FileNotFoundException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
 
 				if (result.hasOption(TIME_OPTION)) {
 					String[] times = result.getOptionValues(TIME_OPTION);
@@ -225,6 +256,14 @@ public class Main {
 
 		Option locationOption = OptionBuilder.create(LOCATION_OPTION);
 
+		OptionBuilder.withArgName("pathGeojson");
+		OptionBuilder.withLongOpt("polygon");
+		OptionBuilder.withDescription(DESCRIPTION_OPT_POLYGON);
+		OptionBuilder.hasArgs(1);
+		OptionBuilder.withValueSeparator(':');
+
+		Option polygonOption = OptionBuilder.create(POLYGON_OPTION);
+
 		OptionBuilder.withArgName("start:end");
 		OptionBuilder.withLongOpt("timespan");
 		OptionBuilder.withDescription(DESCRIPTION_OPT_TIME);
@@ -250,6 +289,7 @@ public class Main {
 		Options options = new Options();
 		options.addOption(outputOption);
 		options.addOption(locationOption);
+		options.addOption(polygonOption);
 		options.addOption(timespanOption);
 		options.addOption(typeOption);
 
