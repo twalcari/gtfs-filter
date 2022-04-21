@@ -1,3 +1,6 @@
 /output
 /target
 /bin
+.classpath
+.project
+.settings
